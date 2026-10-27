@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Manga Eyes</title>
+<style>
+  :root {
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    --bg: #f5ecd6;
+    --bg-edge: #e9d8b3;
+    --ink: #1a1418;
+    --muted: #8b7a58;
+    --ring: #3a2e22;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #ece0c3;
+      --bg-edge: #d9c79d;
+      --muted: #7d6d4c;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #ece0c3;
+    --bg-edge: #d9c79d;
+    --muted: #7d6d4c;
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  html, body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    touch-action: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    background-color: var(--bg);
+    background-image: radial-gradient(ellipse at 50% 46%, var(--bg) 0%, var(--bg) 42%, var(--bg-edge) 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(14px, 3vh, 28px);
+    font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    color: var(--muted);
+    position: relative;
+  }
+  /* faint paper grain */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: .35;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .45  0 0 0 0 .34  0 0 0 0 .16  0 0 0 .55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='.22'/></svg>");
+  }
+  .stage {
+    width: min(96vw, 1200px, 200vh);
+    position: relative;
+  }
+  .tilt {
+    transform-origin: 50% 58%;
+    will-change: transform;
+    filter: drop-shadow(0 22px 22px rgba(96, 62, 18, .16));
+  }
+  svg#eye { display: block; width: 100%; height: auto; overflow: visible; }
+  .ui {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+  }
+  .swatches { display: flex; gap: 12px; }
+  .swatches button {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    box-shadow: inset 0 -5px 8px rgba(255,255,255,.35), inset 0 3px 5px rgba(0,0,0,.35), 0 0 0 2px var(--bg), 0 0 0 3px rgba(58,46,34,.25);
+    transition: transform .18s ease, box-shadow .18s ease;
+  }
+  .swatches button:hover { transform: scale(1.12); }
+  .swatches button[aria-pressed="true"] {
+    box-shadow: inset 0 -5px 8px rgba(255,255,255,.35), inset 0 3px 5px rgba(0,0,0,.35), 0 0 0 2px var(--bg), 0 0 0 4px var(--ring);
+  }
+  .swatches button:focus-visible { outline: 2px solid var(--ring); outline-offset: 5px; }
+  .hint { margin: 0; font-size: 15px; letter-spacing: .01em; font-style: italic; }
+</style>
+</head>
+<body>
+
+<div class="stage" id="stage">
+  <div class="tilt" id="tilt">
+    <svg id="eye" viewBox="0 0 1200 430" role="img" aria-label="A pair of glossy manga eyes that follow your cursor">
+      <defs>
+        <!-- eye opening -->
+        <clipPath id="eyeClip">
+          <path d="M85 220 C130 120 230 70 310 70 C410 70 490 120 520 195 C480 265 390 300 300 300 C200 300 125 270 85 220 Z"/>
+        </clipPath>
+        <clipPath id="irisClip"><ellipse cx="0" cy="0" rx="92" ry="104"/></clipPath>
+        <clipPath id="irisClipHi"><ellipse cx="0" cy="0" rx="85" ry="97"/></clipPath>
+        <clipPath id="lidClip">
+          <path d="M85 220 C120 105 225 55 312 55 C420 55 500 105 552 178 C540 186 530 190 520 195 C490 120 410 70 310 70 C230 70 130 120 85 220 Z"/>
+        </clipPath>
+
+        <filter id="soft" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="1.4"/></filter>
+        <filter id="halo" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="7"/></filter>
+
+        <!-- sclera -->
+        <linearGradient id="gSclera" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#ece5d9"/>
+          <stop offset=".35" stop-color="#fdfbf6"/>
+          <stop offset="1" stop-color="#f1ebe1"/>
+        </linearGradient>
+        <radialGradient id="gCorner" cx=".5" cy=".5" r=".56">
+          <stop offset=".55" stop-color="#7a5058" stop-opacity="0"/>
+          <stop offset="1" stop-color="#7a5058" stop-opacity=".38"/>
+        </radialGradient>
+        <!-- shadow cast by the upper lid -->
+        <linearGradient id="gShadow" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#1b0c26" stop-opacity=".68"/>
+          <stop offset=".22" stop-color="#1b0c26" stop-opacity=".36"/>
+          <stop offset=".46" stop-color="#1b0c26" stop-opacity="0"/>
+        </linearGradient>
+        <!-- fixed cornea sheen -->
+        <linearGradient id="gGloss" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#fff" stop-opacity=".55"/>
+          <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+        </linearGradient>
+
+        <!-- iris -->
+        <linearGradient id="gIris" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" style="stop-color:var(--i0)"/>
+          <stop offset=".5" style="stop-color:var(--i1)"/>
+          <stop offset="1" style="stop-color:var(--i2)"/>
+        </linearGradient>
+        <radialGradient id="gLimbal" cx=".5" cy=".5" r=".5">
+          <stop offset=".7" style="stop-color:var(--i3);stop-opacity:0"/>
+          <stop offset=".9" style="stop-color:var(--i3);stop-opacity:.55"/>
+          <stop offset="1" style="stop-color:var(--i3);stop-opacity:.95"/>
+        </radialGradient>
+        <radialGradient id="gCollar" cx=".5" cy=".5" r=".5">
+          <stop offset=".55" style="stop-color:var(--i2);stop-opacity:0"/>
+          <stop offset=".68" style="stop-color:var(--i2);stop-opacity:.42"/>
+          <stop offset="1" style="stop-color:var(--i2);stop-opacity:0"/>
+        </radialGradient>
+        <radialGradient id="gGlow" cx=".5" cy=".5" r=".5">
+          <stop offset="0" stop-color="#fff" stop-opacity=".7"/>
+          <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="gPupil" cx=".5" cy=".45" r=".55">
+          <stop offset="0" stop-color="#171024"/>
+          <stop offset=".7" stop-color="#07050c"/>
+          <stop offset="1" stop-color="#000"/>
+        </radialGradient>
+
+        <!-- lid lines fading at the ends -->
+        <linearGradient id="gLow" gradientUnits="userSpaceOnUse" x1="85" y1="0" x2="520" y2="0">
+          <stop offset="0" stop-color="#1a1418" stop-opacity="0"/>
+          <stop offset=".2" stop-color="#1a1418" stop-opacity=".85"/>
+          <stop offset=".8" stop-color="#1a1418" stop-opacity=".9"/>
+          <stop offset="1" stop-color="#1a1418" stop-opacity=".25"/>
+        </linearGradient>
+        <linearGradient id="gCrease" gradientUnits="userSpaceOnUse" x1="105" y1="0" x2="528" y2="0">
+          <stop offset="0" stop-color="#5a3f3a" stop-opacity="0"/>
+          <stop offset=".3" stop-color="#5a3f3a" stop-opacity=".7"/>
+          <stop offset=".75" stop-color="#5a3f3a" stop-opacity=".7"/>
+          <stop offset="1" stop-color="#5a3f3a" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="gBrow" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#2b1f22" stop-opacity=".55"/>
+          <stop offset=".3" stop-color="#2b1f22"/>
+          <stop offset="1" stop-color="#2b1f22" stop-opacity=".2"/>
+        </linearGradient>
+
+        <!-- one eye, cloned twice by the script (inner corner on the left, flick on the right) -->
+        <g id="eyeProto">
+
+          <g class="brow">
+            <path d="M96 12 C150 -18 260 -38 370 -28 C430 -22 480 -4 515 22 C470 0 420 -12 360 -14 C270 -18 190 -2 132 20 C118 26 100 22 96 12 Z" fill="url(#gBrow)"/>
+          </g>
+
+          <!-- everything that squashes when blinking -->
+          <g class="blink">
+
+            <g clip-path="url(#eyeClip)">
+              <path d="M85 220 C130 120 230 70 310 70 C410 70 490 120 520 195 C480 265 390 300 300 300 C200 300 125 270 85 220 Z" fill="url(#gSclera)"/>
+              <ellipse cx="102" cy="224" rx="17" ry="12" fill="#e9989a" opacity=".6"/>
+              <path d="M85 220 C130 120 230 70 310 70 C410 70 490 120 520 195 C480 265 390 300 300 300 C200 300 125 270 85 220 Z" fill="url(#gCorner)"/>
+
+              <!-- iris (moves) -->
+              <g class="iris" transform="translate(303 178)">
+                <g clip-path="url(#irisClip)">
+                  <ellipse rx="92" ry="104" fill="url(#gIris)"/>
+                  <g class="fibers"></g>
+                  <ellipse cx="0" cy="60" rx="66" ry="40" fill="url(#gGlow)"/>
+                  <g class="core">
+                    <ellipse rx="66" ry="74" fill="url(#gCollar)"/>
+                    <ellipse class="pupil" rx="38" ry="43" fill="url(#gPupil)"/>
+                  </g>
+                  <ellipse rx="92" ry="104" fill="url(#gLimbal)"/>
+                </g>
+              </g>
+
+              <!-- lid shadow stays with the lid -->
+              <path d="M85 220 C130 120 230 70 310 70 C410 70 490 120 520 195 C480 265 390 300 300 300 C200 300 125 270 85 220 Z" fill="url(#gShadow)"/>
+
+              <!-- fixed cornea sheen -->
+              <path class="gloss" d="M150 152 C170 110 240 88 310 88 C360 88 410 100 442 126 C382 108 302 112 240 128 C200 138 172 150 150 152 Z" fill="url(#gGloss)" opacity=".5"/>
+
+              <!-- specular highlights (lag slightly behind the iris) -->
+              <g class="hi" clip-path="url(#irisClipHi)" transform="translate(303 178)">
+                <g class="hiIn">
+                  <ellipse cx="-38" cy="-46" rx="34" ry="30" fill="#fff" opacity=".28" filter="url(#halo)"/>
+                  <ellipse cx="-38" cy="-46" rx="25" ry="21" transform="rotate(-25 -38 -46)" fill="#fff"/>
+                  <circle cx="34" cy="47" r="11" fill="#fff" opacity=".95"/>
+                  <circle cx="53" cy="22" r="4.5" fill="#fff" opacity=".9"/>
+                  <path d="M-62 24 C-54 56 -24 78 12 82" fill="none" stroke="#fff" stroke-opacity=".3" stroke-width="3" stroke-linecap="round"/>
+                </g>
+              </g>
+
+              <!-- wet lower rim -->
+              <path d="M470 224 C440 262 380 288 300 288 C220 288 155 265 118 226" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="5" stroke-linecap="round" filter="url(#soft)"/>
+            </g>
+
+            <!-- lower lid line -->
+            <path d="M520 195 C480 265 390 300 300 300 C200 300 125 270 85 220" fill="none" stroke="url(#gLow)" stroke-width="3.2" stroke-linecap="round"/>
+
+            <!-- double-eyelid crease -->
+            <path d="M105 185 C150 92 240 38 320 38 C410 38 480 80 528 150" fill="none" stroke="url(#gCrease)" stroke-width="2.4" stroke-linecap="round"/>
+
+            <!-- upper lid, thick ink line with outer flick -->
+            <path d="M85 220 C120 105 225 55 312 55 C420 55 500 105 552 178 C540 186 530 190 520 195 C490 120 410 70 310 70 C230 70 130 120 85 220 Z" style="fill:var(--ink)"/>
+            <path d="M170 100 C210 76 260 66 320 64 C380 64 430 80 472 110" fill="none" stroke="#fff" stroke-opacity=".3" stroke-width="3" stroke-linecap="round" clip-path="url(#lidClip)"/>
+            <g class="lashes" style="fill:var(--ink)"></g>
+          </g>
+        </g>
+      </defs>
+
+      <!-- left eye is a mirror image, so its outer flick points left -->
+      <g id="eyeL" transform="translate(620 70) scale(-1 1)"></g>
+      <g id="eyeR" transform="translate(580 70)"></g>
+    </svg>
+  </div>
+</div>
+
+<div class="ui">
+  <div class="swatches" id="swatches" role="group" aria-label="Eye color"></div>
+  <p class="hint">Move your cursor around. Click to blink, or click an eye to wink.</p>
+</div>
+
+<script>
+(function () {
+  var NS = 'http://www.w3.org/2000/svg';
+  var $ = function (id) { return document.getElementById(id); };
+  var svg = $('eye'), tilt = $('tilt'), stage = $('stage'), proto = $('eyeProto');
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var VBW = 1200;                       // viewBox width
+  var IX = 303, IY = 178;               // iris rest position inside one eye
+  var MX = 80, MY = 34;                 // max iris travel in px
+  var PIV = 235;                        // blink pivot (y)
+
+  /* ---------- deterministic random ---------- */
+  function rng(seed) {
+    return function () {
+      seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+      var t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  var r = rng(23);
+
+  /* ---------- tapered lash shape ---------- */
+  function lash(x0, y0, cx, cy, x1, y1, w) {
+    var dx = cx - x0, dy = cy - y0, len = Math.hypot(dx, dy) || 1;
+    var nx = -dy / len * w, ny = dx / len * w;
+    return 'M' + (x0 + nx) + ' ' + (y0 + ny) + ' Q' + cx + ' ' + cy + ' ' + x1 + ' ' + y1 +
+           ' Q' + cx + ' ' + cy + ' ' + (x0 - nx) + ' ' + (y0 - ny) + 'Z';
+  }
+  var LASHES = [
+    [415, 72, 445, 54, 486, 48, 4],
+    [453, 89, 490, 72, 528, 70, 4.5],
+    [476, 103, 515, 92, 558, 98, 4.5],
+    [508, 128, 545, 120, 582, 137, 4]
+  ];
+
+  /* ---------- build one eye from the prototype ---------- */
+  function makeEye(host, mirror, cx) {
+    var g = proto.cloneNode(true);
+    g.removeAttribute('id');
+    host.appendChild(g);
+    var q = function (c) { return g.querySelector('.' + c); };
+
+    // iris fibres (same seed, so both eyes match)
+    var fr = rng(11), fibers = q('fibers'), N = 120;
+    for (var i = 0; i < N; i++) {
+      var a = i / N * Math.PI * 2 + (fr() - .5) * .06;
+      var r0 = 32 + fr() * 12, r1 = 68 + fr() * 26;
+      var l = document.createElementNS(NS, 'line');
+      l.setAttribute('x1', (Math.cos(a) * r0).toFixed(1));
+      l.setAttribute('y1', (Math.sin(a) * r0 * 1.13).toFixed(1));
+      l.setAttribute('x2', (Math.cos(a) * r1).toFixed(1));
+      l.setAttribute('y2', (Math.sin(a) * r1 * 1.13).toFixed(1));
+      var light = fr() > .5;
+      l.style.stroke = light ? '#ffffff' : 'var(--i3)';
+      l.style.strokeOpacity = (light ? .1 + fr() * .22 : .14 + fr() * .26).toFixed(2);
+      l.setAttribute('stroke-width', (.8 + fr() * 1.8).toFixed(1));
+      l.setAttribute('stroke-linecap', 'round');
+      fibers.appendChild(l);
+    }
+
+    // lashes
+    var lg = q('lashes');
+    LASHES.forEach(function (p) {
+      var el = document.createElementNS(NS, 'path');
+      el.setAttribute('d', lash.apply(null, p));
+      lg.appendChild(el);
+    });
+
+    // keep the cornea sheen on the same side of both eyes
+    if (mirror) q('gloss').setAttribute('transform', 'translate(605 0) scale(-1 1)');
+
+    return {
+      m: mirror ? -1 : 1,
+      cx: cx, cy: 70 + IY,            // rest centre in viewBox units
+      tx: 0, ty: 0, x: 0, y: 0, vx: 0, vy: 0, ps: 1,
+      iris: q('iris'), hi: q('hi'), hiIn: q('hiIn'),
+      pupil: q('pupil'), core: q('core'), brow: q('brow'), blink: q('blink'),
+      host: host, wink: -1, winkAmt: 0
+    };
+  }
+
+  var eyes = [
+    makeEye($('eyeL'), true, 620 - IX),
+    makeEye($('eyeR'), false, 580 + IX)
+  ];
+
+  /* ---------- eye colours ---------- */
+  var palettes = [
+    { name: 'Azure',   c: ['#1a2266', '#2f72dc', '#8fdcff', '#0a1130'] },
+    { name: 'Emerald', c: ['#0c3b36', '#21a67c', '#b9f6cb', '#04201c'] },
+    { name: 'Amber',   c: ['#4d2008', '#cc7420', '#ffe28e', '#260c02'] },
+    { name: 'Violet',  c: ['#2b1058', '#7c50e2', '#dcbcff', '#150626'] },
+    { name: 'Rose',    c: ['#4c0f30', '#d3487f', '#ffc4de', '#260517'] }
+  ];
+  var sw = $('swatches');
+  function setPalette(idx) {
+    var p = palettes[idx].c;
+    for (var k = 0; k < 4; k++) svg.style.setProperty('--i' + k, p[k]);
+    Array.prototype.forEach.call(sw.children, function (b, j) { b.setAttribute('aria-pressed', j === idx ? 'true' : 'false'); });
+    try { sessionStorage.setItem('manga-eyes-color', String(idx)); } catch (e) {}
+  }
+  palettes.forEach(function (p, idx) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.setAttribute('aria-label', p.name + ' eyes');
+    b.style.background = 'linear-gradient(180deg,' + p.c[0] + ',' + p.c[1] + ' 55%,' + p.c[2] + ')';
+    b.addEventListener('click', function (e) { e.stopPropagation(); setPalette(idx); });
+    b.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+    sw.appendChild(b);
+  });
+  var startIdx = 0;
+  try { var saved = parseInt(sessionStorage.getItem('manga-eyes-color'), 10); if (saved >= 0 && saved < palettes.length) startIdx = saved; } catch (e) {}
+  setPalette(startIdx);
+
+  /* ---------- shared state ---------- */
+  var tiltX = 0, tiltY = 0;
+  var lastMove = -1e9, nextWander = 0, pressUntil = 0;
+  var blinkStart = -1, nextBlink = 1600, doubleBlink = false;
+
+  // each eye aims from its own position, so they converge when the cursor is close
+  function aim(px, py) {
+    var rc = stage.getBoundingClientRect();
+    var k = rc.width / VBW;
+    eyes.forEach(function (e) {
+      var dx = px - (rc.left + e.cx * k);
+      var dy = py - (rc.top + e.cy * k);
+      var d = Math.hypot(dx, dy);
+      if (d < 1) { e.tx = 0; e.ty = 0; return; }
+      var f = 1 - Math.exp(-d / (rc.width * 0.108));
+      e.tx = dx / d * f;
+      e.ty = dy / d * f;
+    });
+  }
+
+  function startBlink(now) { if (blinkStart < 0) blinkStart = now; }
+
+  window.addEventListener('pointermove', function (e) {
+    lastMove = performance.now();
+    aim(e.clientX, e.clientY);
+  }, { passive: true });
+  window.addEventListener('pointerdown', function (e) {
+    lastMove = performance.now();
+    aim(e.clientX, e.clientY);
+    pressUntil = lastMove + 260;
+    var hit = null;
+    eyes.forEach(function (eye) { if (eye.host.contains(e.target)) hit = eye; });
+    if (hit) { if (hit.wink < 0) hit.wink = lastMove; }
+    else startBlink(lastMove);
+  }, { passive: true });
+  document.addEventListener('pointerout', function (e) {
+    if (!e.relatedTarget) { lastMove = performance.now() - 2600; }
+  });
+
+  /* ---------- animation loop ---------- */
+  var last = performance.now();
+  function frame(now) {
+    var dt = Math.min(.033, (now - last) / 1000);
+    last = now;
+
+    // idle wandering (both eyes look the same way)
+    if (!reduce && now - lastMove > 3600 && now > nextWander) {
+      var wx = (r() * 2 - 1) * .8, wy = (r() * 2 - 1) * .55;
+      eyes.forEach(function (e) { e.tx = wx; e.ty = wy; });
+      nextWander = now + 900 + r() * 2200;
+    }
+
+    var sumX = 0, sumY = 0;
+    eyes.forEach(function (e) {
+      // spring toward target
+      var k = 240, c = 23;
+      e.vx += ((e.tx * MX - e.x) * k - e.vx * c) * dt;
+      e.vy += ((e.ty * MY - e.y) * k - e.vy * c) * dt;
+      e.x += e.vx * dt; e.y += e.vy * dt;
+      e.x = Math.max(-MX * 1.08, Math.min(MX * 1.08, e.x));
+      e.y = Math.max(-MY * 1.1, Math.min(MY * 1.1, e.y));
+      var nx = e.x / MX, ny = e.y / MY;
+      sumX += nx; sumY += ny;
+
+      // pupil breathes with distance, pinches on click
+      var f = Math.min(1, Math.hypot(e.tx, e.ty));
+      var pt = 1.06 - .14 * f;
+      if (now < pressUntil) pt *= .8;
+      e.ps += (pt - e.ps) * Math.min(1, dt * 9);
+      e.pupil.setAttribute('rx', (38 * e.ps).toFixed(2));
+      e.pupil.setAttribute('ry', (43 * e.ps).toFixed(2));
+
+      // the left eye is mirrored, so flip x in its local space
+      var lx = e.m * e.x;
+      var sx = 1 - .09 * Math.abs(nx);
+      var pos = 'translate(' + (IX + lx).toFixed(2) + ' ' + (IY + e.y).toFixed(2) + ')';
+      e.iris.setAttribute('transform', pos + ' scale(' + sx.toFixed(3) + ' 1)');
+      e.core.setAttribute('transform', 'translate(' + (e.m * nx * 6).toFixed(2) + ' ' + (ny * 5).toFixed(2) + ')');
+      // highlights: un-mirror so the light comes from the same side on both eyes
+      e.hi.setAttribute('transform', pos + ' scale(' + e.m + ' 1)');
+      e.hiIn.setAttribute('transform', 'translate(' + (-e.x * .32).toFixed(2) + ' ' + (-e.y * .32).toFixed(2) + ')');
+
+      // eyebrow follows gaze
+      e.brow.setAttribute('transform', 'translate(' + (e.m * nx * 5).toFixed(2) + ' ' + (ny * 8 + 7 * e.winkAmt).toFixed(2) + ') rotate(' + (e.m * nx * 1.4).toFixed(2) + ' 300 0)');
+    });
+
+    // 3D tilt toward the cursor (average of both eyes)
+    if (!reduce) {
+      var ax = sumX / eyes.length, ay = sumY / eyes.length;
+      tiltX += (ax * 7 - tiltX) * Math.min(1, dt * 7);
+      tiltY += (-ay * 6 - tiltY) * Math.min(1, dt * 7);
+      tilt.style.transform = 'perspective(1400px) rotateY(' + tiltX.toFixed(2) + 'deg) rotateX(' + tiltY.toFixed(2) + 'deg)';
+    }
+
+    // blinking (both eyes together)
+    var s = 1;
+    if (blinkStart < 0 && now > nextBlink) { blinkStart = now; }
+    if (blinkStart >= 0) {
+      var p = (now - blinkStart) / 190;
+      if (p >= 1) {
+        blinkStart = -1;
+        if (!doubleBlink && r() < .18) { doubleBlink = true; nextBlink = now + 120; }
+        else { doubleBlink = false; nextBlink = now + 2400 + r() * 3800; }
+      } else {
+        var w = p < .38 ? p / .38 : (1 - p) / .62;
+        w = w * w * (3 - 2 * w);
+        s = 1 - .93 * w;
+      }
+    }
+    // winks: one eye stays shut for a beat while the other squints a little
+    var wv = eyes.map(function (e) {
+      if (e.wink < 0) return 0;
+      var p = (now - e.wink) / 460;
+      if (p >= 1) { e.wink = -1; return 0; }
+      var w = p < .22 ? p / .22 : p < .62 ? 1 : (1 - p) / .38;
+      return w * w * (3 - 2 * w);
+    });
+    eyes.forEach(function (e, i) {
+      var se = Math.min(s, 1 - .96 * wv[i], 1 - .14 * wv[1 - i]);
+      e.winkAmt = wv[i];
+      if (se >= .999) e.blink.removeAttribute('transform');
+      else e.blink.setAttribute('transform', 'translate(0 ' + PIV + ') scale(1 ' + se.toFixed(3) + ') translate(0 ' + (-PIV) + ')');
+    });
+
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

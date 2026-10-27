@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wink Girl</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700&family=Nunito:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#fbeff5; --panel:#fffdfb; --ink:#3a2b3d; --sub:#8a7189;
+    --accent:#f2a6c6; --line:#e7cfe0; --ok:#7cc9a0;
+    box-sizing:border-box;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){ --bg:#241b28; --panel:#2e2233; --ink:#f3e9f5; --sub:#c1a9c4; --line:#4a3a52; }
+  }
+  :root[data-theme="dark"]{ --bg:#241b28; --panel:#2e2233; --ink:#f3e9f5; --sub:#c1a9c4; --line:#4a3a52; }
+  html{scroll-padding-top:env(safe-area-inset-top,0px);}
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100%; background:var(--bg); color:var(--ink);
+    font-family:'Nunito',system-ui,sans-serif; display:flex; justify-content:center;
+    padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  .wrap{width:100%; max-width:480px; padding:20px 18px 32px;}
+  h1{font-family:'Baloo 2',system-ui,sans-serif; font-size:1.6rem; margin:4px 0 2px; font-weight:700;}
+  .tag{color:var(--sub); margin:0 0 18px; font-size:.95rem;}
+  .stage{
+    position:relative; background:radial-gradient(circle at 30% 20%, #fff 0%, var(--panel) 55%, #f6e6f1 100%);
+    border:1px solid var(--line); border-radius:24px; padding:18px;
+    box-shadow:0 10px 28px rgba(90,40,90,.1); overflow:hidden; touch-action:none;
+  }
+  :root[data-theme="dark"] .stage, @media (prefers-color-scheme:dark){.stage{background:radial-gradient(circle at 30% 20%, #3a2c42 0%, var(--panel) 60%, #241b28 100%);}}
+  svg#char{width:100%; height:auto; display:block;}
+  #bob{animation:bob 3.2s ease-in-out infinite; transform-box:fill-box; transform-origin:center;}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+  .eyeL,.eyeR{transform-box:fill-box; transform-origin:center; transition:transform .03s linear;}
+  .pupilL,.pupilR{transform-box:fill-box;}
+  .mouth path{transition:opacity .15s ease;}
+  .blush{transition:opacity .25s ease;}
+  video#cam{
+    position:absolute; top:18px; right:18px; width:84px; height:63px; border-radius:12px;
+    object-fit:cover; transform:scaleX(-1); border:2px solid var(--panel);
+    outline:2px solid var(--line); background:#000; opacity:.95; display:none;
+  }
+  .status{margin-top:14px; font-size:.9rem; color:var(--sub); min-height:1.3em; display:flex; align-items:center; gap:6px;}
+  .dot{width:8px; height:8px; border-radius:50%; background:var(--sub); flex:none;}
+  .dot.live{background:var(--ok);}
+  .controls{display:flex; gap:10px; margin-top:16px; flex-wrap:wrap;}
+  button{
+    font-family:'Baloo 2',system-ui,sans-serif; font-size:.95rem; font-weight:500;
+    padding:10px 16px; border-radius:14px; border:1px solid var(--line);
+    background:var(--accent); color:#3a2030; cursor:pointer;
+  }
+  button:active{transform:translateY(1px);}
+  button.secondary{background:transparent; color:var(--ink);}
+  button:disabled{opacity:.45; cursor:not-allowed;}
+  .hint{color:var(--sub); font-size:.85rem; line-height:1.5; margin-top:14px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Wink Girl</h1>
+  <p class="tag">She's already watching your cursor — tap below to upgrade to your real webcam.</p>
+
+  <div class="stage" id="stage">
+    <svg id="char" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="hairG" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#d6c2ff"/><stop offset="55%" stop-color="#a37ef0"/><stop offset="100%" stop-color="#8158d6"/>
+        </linearGradient>
+        <linearGradient id="hairStreak" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#f0e4ff" stop-opacity=".9"/><stop offset="100%" stop-color="#f0e4ff" stop-opacity="0"/>
+        </linearGradient>
+        <radialGradient id="skinG" cx="42%" cy="35%" r="70%">
+          <stop offset="0%" stop-color="#fff4e8"/><stop offset="100%" stop-color="#ffe0c8"/>
+        </radialGradient>
+        <radialGradient id="irisG" cx="40%" cy="35%" r="65%">
+          <stop offset="0%" stop-color="#d9c8ff"/><stop offset="55%" stop-color="#8f6be0"/><stop offset="100%" stop-color="#5a3fa8"/>
+        </radialGradient>
+        <radialGradient id="cheekG" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#f7a9c9" stop-opacity=".9"/><stop offset="100%" stop-color="#f7a9c9" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+
+      <g id="bob">
+        <ellipse cx="55" cy="158" rx="38" ry="58" fill="url(#hairG)"/>
+        <ellipse cx="245" cy="158" rx="38" ry="58" fill="url(#hairG)"/>
+        <path d="M150 36 C82 36 56 92 60 155 C63 200 78 240 96 258 L96 178 Q150 202 204 178 L204 258 C222 240 237 200 240 155 C244 92 218 36 150 36 Z" fill="url(#hairG)"/>
+        <path d="M76 70 Q100 44 150 42 C130 66 118 96 116 130 Q92 108 76 70 Z" fill="url(#hairStreak)"/>
+        <ellipse cx="150" cy="168" rx="88" ry="92" fill="url(#skinG)"/>
+        <path d="M62 148 C58 96 96 50 150 50 C204 50 242 96 238 148 C220 112 190 98 150 98 C110 98 80 112 62 148 Z" fill="url(#hairG)"/>
+        <path d="M112 30 q38 -18 76 0 q-8 14 -38 14 q-30 0 -38 -14 Z" fill="#f2a6c6"/>
+        <circle cx="150" cy="34" r="7" fill="#e089ae"/>
+
+        <path d="M107 126 Q118 114 133 121" stroke="#5a4463" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+        <path d="M167 121 Q182 114 193 126" stroke="#5a4463" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+
+        <ellipse class="blush" id="blushL" cx="96" cy="194" rx="16" ry="9" fill="url(#cheekG)" opacity=".55"/>
+        <ellipse class="blush" id="blushR" cx="204" cy="194" rx="16" ry="9" fill="url(#cheekG)" opacity=".55"/>
+
+        <g class="eyeL">
+          <ellipse cx="117" cy="162" rx="25" ry="21" fill="#fff"/>
+          <g class="pupilL" id="pupilL">
+            <circle cx="117" cy="162" r="14" fill="url(#irisG)"/>
+            <circle cx="117" cy="162" r="6.5" fill="#241b28"/>
+            <path d="M108 152 q8 -7 16 -2" stroke="#fff" stroke-width="2.6" fill="none" stroke-linecap="round" opacity=".85"/>
+            <circle cx="122" cy="157" r="2.8" fill="#fff"/>
+            <circle cx="112" cy="168" r="1.5" fill="#fff" opacity=".8"/>
+          </g>
+          <ellipse cx="117" cy="162" rx="25" ry="21" fill="none" stroke="#5a4463" stroke-width="2.5"/>
+          <path d="M92 150 q-8 -6 -14 -2" stroke="#5a4463" stroke-width="3" fill="none" stroke-linecap="round"/>
+        </g>
+        <g class="eyeR">
+          <ellipse cx="183" cy="162" rx="25" ry="21" fill="#fff"/>
+          <g class="pupilR" id="pupilR">
+            <circle cx="183" cy="162" r="14" fill="url(#irisG)"/>
+            <circle cx="183" cy="162" r="6.5" fill="#241b28"/>
+            <path d="M174 152 q8 -7 16 -2" stroke="#fff" stroke-width="2.6" fill="none" stroke-linecap="round" opacity=".85"/>
+            <circle cx="188" cy="157" r="2.8" fill="#fff"/>
+            <circle cx="178" cy="168" r="1.5" fill="#fff" opacity=".8"/>
+          </g>
+          <ellipse cx="183" cy="162" rx="25" ry="21" fill="none" stroke="#5a4463" stroke-width="2.5"/>
+          <path d="M208 150 q8 -6 14 -2" stroke="#5a4463" stroke-width="3" fill="none" stroke-linecap="round"/>
+        </g>
+
+        <g class="mouth">
+          <path id="mouthNeutral" d="M137 210 Q150 214 163 210" stroke="#a15b6e" stroke-width="4" fill="none" stroke-linecap="round" opacity="1"/>
+          <path id="mouthSmile" d="M131 206 Q150 234 169 206 Q150 224 131 206 Z" fill="#a15b6e" opacity="0"/>
+        </g>
+      </g>
+    </svg>
+    <video id="cam" playsinline muted autoplay></video>
+  </div>
+
+  <p class="status" id="status"><span class="dot live" id="statusDot"></span><span id="statusText">Following your cursor — move around!</span></p>
+
+  <div class="controls">
+    <button id="startBtn">📷 Try Real Webcam</button>
+    <button id="hiBtn" class="secondary">👋 Say "Hi"</button>
+    <button id="recalBtn" class="secondary" disabled>🎯 Recenter</button>
+  </div>
+
+  <p class="hint">By default she tracks your mouse/finger — always works. "Try Real Webcam" attempts live face-tracking (needs good light, a forward-facing face, and camera permission granted to this exact tab — if it says denied, open this page's own link in a fresh browser tab rather than the in-chat preview, since embedded previews often can't get camera access at all). Say "hi" out loud in Chrome/Edge, or tap the button, to make her smile.</p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/clmtrackr@1.1.2/build/clmtrackr.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/clmtrackr@1.1.2/models/model_pca_20_svm.js"></script>
+<script>
+(function(){
+  const statusText = document.getElementById('statusText');
+  const statusDot = document.getElementById('statusDot');
+  const startBtn = document.getElementById('startBtn');
+  const hiBtn = document.getElementById('hiBtn');
+  const recalBtn = document.getElementById('recalBtn');
+  const video = document.getElementById('cam');
+  const stage = document.getElementById('stage');
+  const pupilL = document.getElementById('pupilL');
+  const pupilR = document.getElementById('pupilR');
+  const eyeL = document.querySelector('.eyeL');
+  const eyeR = document.querySelector('.eyeR');
+  const mouthNeutral = document.getElementById('mouthNeutral');
+  const mouthSmile = document.getElementById('mouthSmile');
+  const blushL = document.getElementById('blushL');
+  const blushR = document.getElementById('blushR');
+
+  function setStatus(msg, live){ statusText.textContent = msg; statusDot.classList.toggle('live', !!live); }
+  function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
+  function dist(a, b){ return Math.hypot(a[0]-b[0], a[1]-b[1]); }
+
+  function smile(on){
+    mouthNeutral.style.opacity = on ? 0 : 1;
+    mouthSmile.style.opacity = on ? 1 : 0;
+    blushL.style.opacity = on ? 1 : .55;
+    blushR.style.opacity = on ? 1 : .55;
+  }
+  let smileTimer = null;
+  function triggerHi(){ smile(true); clearTimeout(smileTimer); smileTimer = setTimeout(() => smile(false), 1800); }
+  hiBtn.addEventListener('click', triggerHi);
+
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let startSpeech = () => {};
+  if (SR) {
+    const rec = new SR();
+    rec.continuous = true; rec.interimResults = false; rec.lang = 'en-US';
+    let wantListening = false;
+    rec.onresult = (e) => {
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const t = e.results[i][0].transcript.toLowerCase();
+        if (/\bhi\b|\bhey\b|\bhello\b/.test(t)) triggerHi();
+      }
+    };
+    rec.onerror = () => {};
+    rec.onend = () => { if (wantListening) { try { rec.start(); } catch(e){} } };
+    startSpeech = () => { wantListening = true; try { rec.start(); } catch(e){} };
+  }
+
+  // pointer fallback target
+  let pointerX = 0.5, pointerY = 0.4;
+  function setPointer(clientX, clientY){
+    const r = stage.getBoundingClientRect();
+    pointerX = clamp((clientX - r.left) / r.width, 0, 1);
+    pointerY = clamp((clientY - r.top) / r.height, 0, 1);
+  }
+  window.addEventListener('mousemove', e => setPointer(e.clientX, e.clientY));
+  window.addEventListener('touchmove', e => { if (e.touches[0]) setPointer(e.touches[0].clientX, e.touches[0].clientY); }, {passive:true});
+
+  let ctracker = null, tracking = false;
+  let baselineX = null, baselineY = null, smoothGX = 0, smoothGY = 0;
+  let maxEarL = null, maxEarR = null, smoothOpenL = 1, smoothOpenR = 1;
+  let frames = 0;
+
+  function applyEyes(gx, gy, openL, openR){
+    smoothGX += (gx - smoothGX) * 0.18;
+    smoothGY += (gy - smoothGY) * 0.18;
+    const px = smoothGX * 8, py = smoothGY * 4;
+    pupilL.setAttribute('transform', `translate(${px} ${py})`);
+    pupilR.setAttribute('transform', `translate(${px} ${py})`);
+    smoothOpenL += (openL - smoothOpenL) * 0.55;
+    smoothOpenR += (openR - smoothOpenR) * 0.55;
+    eyeL.style.transform = `scaleY(${smoothOpenL})`;
+    eyeR.style.transform = `scaleY(${smoothOpenR})`;
+  }
+
+  function mainLoop(){
+    requestAnimationFrame(mainLoop);
+    if (tracking && ctracker) {
+      const p = ctracker.getCurrentPosition();
+      if (!p || !p.length) { setStatus('Looking for your face…', false); return; }
+      frames++;
+      const interocular = dist(p[27], p[32]) || 60;
+      const cx = p[41][0], cy = p[41][1];
+      if (baselineX === null) { baselineX = cx; baselineY = cy; }
+      else { baselineX += (cx - baselineX) * 0.01; baselineY += (cy - baselineY) * 0.01; }
+      let gx = clamp(-(cx - baselineX) / (interocular * 0.7), -1, 1);
+      let gy = clamp((cy - baselineY) / (interocular * 0.9), -1, 1);
+
+      const earL = dist(p[24], p[26]) / (dist(p[23], p[25]) || 1);
+      const earR = dist(p[29], p[31]) / (dist(p[28], p[30]) || 1);
+      if (frames < 15) {
+        maxEarL = maxEarL === null ? earL : Math.max(maxEarL, earL);
+        maxEarR = maxEarR === null ? earR : Math.max(maxEarR, earR);
+      } else {
+        maxEarL = Math.max(earL, maxEarL * 0.995);
+        maxEarR = Math.max(earR, maxEarR * 0.995);
+      }
+      const openL = clamp(earL / (maxEarL || earL), 0.06, 1);
+      const openR = clamp(earR / (maxEarR || earR), 0.06, 1);
+      applyEyes(gx, gy, openL, openR);
+      setStatus('Tracking your face', true);
+    } else {
+      const gx = (pointerX - 0.5) * 2;
+      const gy = (pointerY - 0.42) * 2;
+      applyEyes(clamp(gx,-1,1), clamp(gy,-1,1), 1, 1);
+    }
+  }
+  requestAnimationFrame(mainLoop);
+
+  startBtn.addEventListener('click', async () => {
+    startBtn.disabled = true;
+    setStatus('Requesting camera…', false);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240 }, audio: false });
+      video.srcObject = stream; video.style.display = 'block';
+      await video.play();
+      setStatus('Loading face model…', false);
+      ctracker = new clm.tracker();
+      ctracker.init();
+      ctracker.start(video);
+      tracking = true;
+      frames = 0; baselineX = null; baselineY = null; maxEarL = null; maxEarR = null;
+      recalBtn.disabled = false;
+      startSpeech();
+      startBtn.textContent = '📷 Webcam active';
+    } catch (err) {
+      const denied = err && err.name === 'NotAllowedError';
+      setStatus(denied
+        ? 'Camera blocked here — open this page in its own tab (not the in-chat preview) and try again. Cursor-tracking still active.'
+        : 'Webcam unavailable: ' + (err && err.message ? err.message : err) + '. Cursor-tracking still active.', false);
+      startBtn.disabled = false;
+    }
+  });
+
+  recalBtn.addEventListener('click', () => { baselineX = null; baselineY = null; frames = 0; });
+})();
+</script>
+</body>
+</html>
